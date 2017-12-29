@@ -1,26 +1,7 @@
 package com.soebes.performance;
 
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,17 +12,16 @@ import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Warmup;
 
 /**
  * @author Karl Heinz Marbaise <a href="mailto">khmarbaise@apache.org</a>
  */
-@Fork( 1 )
-@Warmup( iterations = 1 )
-@Measurement( iterations = 1 )
+@Fork( 3 )
+// @Warmup( iterations = 10 )
+@Measurement( iterations = 5 )
 @State( Scope.Benchmark )
 @BenchmarkMode( Mode.AverageTime )
-public class DefaultModelValidatorPerformanceTest
+public class DefaultModelValidatorPerformance
 {
     public static final String SHA1_PROPERTY = "sha1";
 
@@ -63,13 +43,34 @@ public class DefaultModelValidatorPerformanceTest
     private static final Pattern PATTERN_REVISION_PROPERTY =
         Pattern.compile( REVISION_PROPERTY_EXPRESSION, Pattern.LITERAL );
 
+    public static final String[] EXPRESSIONS =
+        { "${changelist}-${wrong}", "${revision}${changelist}${sha1}", "${wrong}", "${wrong}${sha1}${changelist}" };
+
     @Benchmark
-    private void testExpression()
+    public void testExpressionV1()
     {
-        x("${changelist}-${wrong}");
+        for ( int round = 0; round < 100000; round++ )
+        {
+            for ( int i = 0; i < EXPRESSIONS.length; i++ )
+            {
+                boolean result = v1( EXPRESSIONS[i] );
+            }
+        }
     }
-    
-    public void x(String string)
+
+    @Benchmark
+    public void testExpressionV2()
+    {
+        for ( int round = 0; round < 100000; round++ )
+        {
+            for ( int i = 0; i < EXPRESSIONS.length; i++ )
+            {
+                boolean result = v2( EXPRESSIONS[i] );
+            }
+        }
+    }
+
+    public boolean v1( String string )
     {
         //@formatter:off
         string =
@@ -85,26 +86,38 @@ public class DefaultModelValidatorPerformanceTest
                 .matcher( string )
                 .replaceAll( SHA1_PROPERTY );
         //@formatter:on
+        if ( string.contains( "${" ) )
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
     }
 
-    public void testName()
-        throws Exception
+    public boolean v2( String a )
     {
-        String a = "${aal}${beta}${cbc}xyz${alpha1}";
         Pattern X = Pattern.compile( "\\$\\{(\\w+)\\}" );
         Matcher matcher = X.matcher( a );
-        List<String> result = new ArrayList<>();
+        Set<String> result = new HashSet<>();
         while ( matcher.find() )
         {
-            System.out.println( "G: '" + matcher.group() + "'" + " Count:" + matcher.groupCount() + " C:"
-                + matcher.group( 1 ) );
+            // System.out.println( "G: '" + matcher.group() + "'" + " Count:" + matcher.groupCount() + " C:"
+            // + matcher.group( 1 ) );
             result.add( matcher.group( 1 ) );
         }
 
-    }
-
-    public void testCiFriendlyPerformanceFailure()
-    {
+        if ( result.size() == 3 )
+        {
+            return result.contains( CHANGELIST_PROPERTY ) && result.contains( REVISION_PROPERTY )
+                && result.contains( SHA1_PROPERTY );
+        }
+        else
+        {
+            return result.contains( CHANGELIST_PROPERTY ) || result.contains( REVISION_PROPERTY )
+                || result.contains( SHA1_PROPERTY );
+        }
     }
 
 }
