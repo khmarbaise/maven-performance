@@ -17,7 +17,7 @@ import org.openjdk.jmh.annotations.Warmup;
 /**
  * @author Karl Heinz Marbaise <a href="mailto">khmarbaise@apache.org</a>
  */
-@Fork( 3 )
+@Fork( 5 )
 @Warmup( iterations = 10 )
 @Measurement( iterations = 100 )
 @State( Scope.Benchmark )
