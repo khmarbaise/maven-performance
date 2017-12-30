@@ -1,6 +1,8 @@
 package com.soebes.performance;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -71,6 +73,18 @@ public class DefaultModelValidatorPerformance
         }
     }
 
+    @Benchmark
+    public void testViaDifferentRegEx()
+    {
+        for ( int round = 0; round < 100000; round++ )
+        {
+            for ( int i = 0; i < EXPRESSIONS.length; i++ )
+            {
+                boolean result = v3( EXPRESSIONS[i] );
+            }
+        }
+    }
+
     public boolean v1( String string )
     {
         //@formatter:off
@@ -119,4 +133,20 @@ public class DefaultModelValidatorPerformance
         }
     }
 
+    public boolean v3( String a )
+    {
+        Pattern p = Pattern.compile( "\\$\\{(.+?)\\}" );
+
+        List<String> ciVersions = Arrays.asList( REVISION_PROPERTY, CHANGELIST_PROPERTY, SHA1_PROPERTY );
+        Matcher m = p.matcher( a.trim() );
+        while ( m.find() )
+        {
+            if ( !ciVersions.contains( m.group( 1 ) ) )
+            {
+                return false;
+            }
+        }
+        
+        return true;
+    }
 }
