@@ -12,13 +12,14 @@ import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 /**
  * @author Karl Heinz Marbaise <a href="mailto">khmarbaise@apache.org</a>
  */
 @Fork( 3 )
-// @Warmup( iterations = 10 )
-@Measurement( iterations = 5 )
+@Warmup( iterations = 10 )
+@Measurement( iterations = 100 )
 @State( Scope.Benchmark )
 @BenchmarkMode( Mode.AverageTime )
 public class DefaultModelValidatorPerformance
@@ -47,7 +48,7 @@ public class DefaultModelValidatorPerformance
         { "${changelist}-${wrong}", "${revision}${changelist}${sha1}", "${wrong}", "${wrong}${sha1}${changelist}" };
 
     @Benchmark
-    public void testExpressionV1()
+    public void testSearchAndReplace()
     {
         for ( int round = 0; round < 100000; round++ )
         {
@@ -59,7 +60,7 @@ public class DefaultModelValidatorPerformance
     }
 
     @Benchmark
-    public void testExpressionV2()
+    public void testSearchViaRegExGroups()
     {
         for ( int round = 0; round < 100000; round++ )
         {
@@ -103,8 +104,6 @@ public class DefaultModelValidatorPerformance
         Set<String> result = new HashSet<>();
         while ( matcher.find() )
         {
-            // System.out.println( "G: '" + matcher.group() + "'" + " Count:" + matcher.groupCount() + " C:"
-            // + matcher.group( 1 ) );
             result.add( matcher.group( 1 ) );
         }
 
